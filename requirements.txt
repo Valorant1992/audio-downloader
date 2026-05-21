@@ -1,0 +1,8 @@
+yt-dlp
+spotdl
+fastapi
+uvicorn
+python-telegram-bot
+python-dotenv
+mutagen
+requests
