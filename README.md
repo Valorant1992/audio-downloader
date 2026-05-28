@@ -1,3 +1,13 @@
+---
+title: Audio Downloader
+emoji: 🎧
+colorFrom: purple
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # Audio Downloader
 
 A **FastAPI** based service for downloading audio from various sources, with optional **Telegram bot** integration.
