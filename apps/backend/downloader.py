@@ -297,14 +297,27 @@ def download_audio_to_mp3(url: str, output_dir: str = DEFAULT_DOWNLOAD_DIR, star
         except Exception as e:
             logger.warning("Smart match failed, falling back to direct download: %s", e)
 
-    if search_query:
-        # Download the OFFICIAL audio instead of a potentially bad lyrical/visualizer video
-        yt_search = f"ytsearch1:{search_query} official audio"
-        filepath = download_with_ytdlp(yt_search, output_dir, start_time, end_time)
-        # Apply pristine iTunes tags to the file
-        apply_id3_tags(filepath, clean_title)
-        return filepath
-    else:
-        # Complete fallback (e.g., it's a vlog, a podcast, or unrecognized song)
-        filepath = download_with_ytdlp(url, output_dir, start_time, end_time)
-        return filepath
+    try:
+        if search_query:
+            # Download the OFFICIAL audio instead of a potentially bad lyrical/visualizer video
+            yt_search = f"ytsearch1:{search_query} official audio"
+            filepath = download_with_ytdlp(yt_search, output_dir, start_time, end_time)
+            # Apply pristine iTunes tags to the file
+            apply_id3_tags(filepath, clean_title)
+            return filepath
+        else:
+            # Complete fallback (e.g., it's a vlog, a podcast, or unrecognized song)
+            filepath = download_with_ytdlp(url, output_dir, start_time, end_time)
+            return filepath
+    except Exception as ytdlp_err:
+        logger.warning("yt-dlp download failed: %s. Attempting fallback via Cobalt API...", ytdlp_err)
+        from .cobalt import download_via_cobalt
+        try:
+            filepath = download_via_cobalt(url, output_dir, start_time, end_time)
+            # Try to apply metadata if we extracted a clean title earlier
+            if clean_title:
+                apply_id3_tags(filepath, clean_title)
+            return filepath
+        except Exception as cobalt_err:
+            logger.error("Both yt-dlp and Cobalt API fallback failed to download the audio.")
+            raise ValueError(f"Download failed. yt-dlp error: {ytdlp_err} | Cobalt error: {cobalt_err}")
