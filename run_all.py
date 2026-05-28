@@ -32,15 +32,19 @@ else:
 try:
     while True:
         # Check if any process has exited
-        for p in processes:
+        for p in processes[:]:
             poll_result = p.poll()
             if poll_result is not None:
                 print(f"Process {p.args} exited with code {poll_result}")
-                # Terminate other processes
-                for other in processes:
-                    if other != p:
-                        other.terminate()
-                sys.exit(poll_result)
+                if "bot.py" in str(p.args):
+                    print("⚠️ Telegram bot exited. Continuing with the FastAPI web app...")
+                    processes.remove(p)
+                else:
+                    # If FastAPI exits, terminate everything and exit
+                    for other in processes:
+                        if other != p:
+                            other.terminate()
+                    sys.exit(poll_result)
         time.sleep(2)
 except KeyboardInterrupt:
     print("Stopping all processes...")
