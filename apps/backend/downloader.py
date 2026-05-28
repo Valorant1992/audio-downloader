@@ -115,7 +115,7 @@ def download_with_ytdlp(query: str, output_dir: str, start_time: int = None, end
     if start_time is not None or end_time is not None:
         logger.debug("Download time range: start=%s, end=%s", start_time, end_time)
     
-    # We use FFmpegMetadata as a fallback base layer
+    # We use FFmpegMetadata as a fallback base layer and spoof clients to bypass bot detection.
     ydl_opts = {
         'format': 'bestaudio/best',
         'writethumbnail': True,
@@ -128,6 +128,7 @@ def download_with_ytdlp(query: str, output_dir: str, start_time: int = None, end
             },
             {
                 'key': 'FFmpegMetadata',
+                'add_metadata': True,
             },
             {
                 'key': 'EmbedThumbnail',
@@ -136,6 +137,12 @@ def download_with_ytdlp(query: str, output_dir: str, start_time: int = None, end
         'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
         'quiet': False,
         'no_warnings': True,
+        # Spoof clients to bypass the "Sign in to confirm you're not a bot" challenge
+        'extractor_args': {
+            'youtube': {
+                'player_client': ['web', 'ios', 'android'],
+            }
+        }
     }
 
     # Cloud/Linux compatibility: Only use the hardcoded Windows path if it exists.
