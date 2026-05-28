@@ -129,6 +129,7 @@ def download_with_ytdlp(query: str, output_dir: str, start_time: int = None, end
     # We use FFmpegMetadata as a fallback base layer and spoof clients to bypass bot detection.
     ydl_opts = {
         'format': 'bestaudio/best',
+        'ignoreerrors': True,
         'writethumbnail': True,
         'match_filter': duration_filter,
         'postprocessors': [
