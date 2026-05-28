@@ -217,7 +217,15 @@ def download_audio_to_mp3(url: str, output_dir: str = DEFAULT_DOWNLOAD_DIR, star
         # Smart Match for YouTube/Generic URLs
         logger.info("Analyzing URL for smart matching...")
         try:
-            with yt_dlp.YoutubeDL({'quiet': True, 'no_warnings': True}) as ydl:
+            with yt_dlp.YoutubeDL({
+                'quiet': True,
+                'no_warnings': True,
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['web', 'ios', 'android'],
+                    }
+                }
+            }) as ydl:
                 info = ydl.extract_info(url, download=False)
                 
                 # 1. Try YouTube's official music metadata
