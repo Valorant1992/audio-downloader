@@ -19,6 +19,13 @@ FFMPEG_DIR = r'C:\Users\giris\AppData\Local\ffmpegio\ffmpeg-downloader\ffmpeg\bi
 import logging
 logger = logging.getLogger("audio_downloader.downloader")
 
+# Ensure logging outputs to stdout for Docker/HuggingFace container visibility
+if not logger.handlers:
+    logger.setLevel(logging.DEBUG)
+    sh = logging.StreamHandler()
+    sh.setFormatter(logging.Formatter("[%(asctime)s] %(levelname)-8s [%(name)s] %(message)s"))
+    logger.addHandler(sh)
+
 # Dynamically write cookies.txt from environment variable if provided (e.g. on Hugging Face)
 cookies_env = os.environ.get("COOKIES_CONTENT")
 if cookies_env:
