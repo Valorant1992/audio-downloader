@@ -9,7 +9,8 @@ from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, TCON, TDRC, error
 
 # Determine the base directory of the script
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.dirname(BASE_DIR)
+# BASE_DIR is /app/apps/backend, so we need to go up two directories to reach /app root
+ROOT_DIR = os.path.dirname(os.path.dirname(BASE_DIR))
 DEFAULT_DOWNLOAD_DIR = os.path.join(BASE_DIR, 'downloads')
 COOKIES_FILE = os.path.join(ROOT_DIR, 'cookies.txt')
 
