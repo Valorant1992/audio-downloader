@@ -22,6 +22,7 @@ Thumbs.db
 
 # Download files
 apps/backend/downloads/*
+apps/universal_audio_downloader/downloads/*
 
 # Logs
 logs/*
