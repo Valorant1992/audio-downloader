@@ -9,7 +9,18 @@ from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, TCON, TDRC, error
 
 # Determine the base directory of the script
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(BASE_DIR)
 DEFAULT_DOWNLOAD_DIR = os.path.join(BASE_DIR, 'downloads')
+COOKIES_FILE = os.path.join(ROOT_DIR, 'cookies.txt')
+
+# Dynamically write cookies.txt from environment variable if provided (e.g. on Hugging Face)
+cookies_env = os.environ.get("COOKIES_CONTENT")
+if cookies_env:
+    try:
+        with open(COOKIES_FILE, "w", encoding="utf-8") as f:
+            f.write(cookies_env.strip())
+    except Exception as e:
+        print(f"Failed to write COOKIES_CONTENT to file: {e}")
 
 # FFmpeg paths specific to this setup
 FFMPEG_DIR = r'C:\Users\giris\AppData\Local\ffmpegio\ffmpeg-downloader\ffmpeg\bin'
@@ -145,6 +156,11 @@ def download_with_ytdlp(query: str, output_dir: str, start_time: int = None, end
         }
     }
 
+    # Use cookies if cookies.txt exists in the root directory
+    if os.path.exists(COOKIES_FILE):
+        logger.info("Using exported cookies from: %s", COOKIES_FILE)
+        ydl_opts['cookiefile'] = COOKIES_FILE
+
     # Cloud/Linux compatibility: Only use the hardcoded Windows path if it exists.
     # Otherwise, yt-dlp will automatically find ffmpeg in the system PATH.
     win_ffmpeg = r'C:\Users\giris\AppData\Local\ffmpegio\ffmpeg-downloader\ffmpeg\bin'
@@ -217,7 +233,7 @@ def download_audio_to_mp3(url: str, output_dir: str = DEFAULT_DOWNLOAD_DIR, star
         # Smart Match for YouTube/Generic URLs
         logger.info("Analyzing URL for smart matching...")
         try:
-            with yt_dlp.YoutubeDL({
+            ydl_opts_meta = {
                 'quiet': True,
                 'no_warnings': True,
                 'extractor_args': {
@@ -225,7 +241,10 @@ def download_audio_to_mp3(url: str, output_dir: str = DEFAULT_DOWNLOAD_DIR, star
                         'player_client': ['web', 'ios', 'android'],
                     }
                 }
-            }) as ydl:
+            }
+            if os.path.exists(COOKIES_FILE):
+                ydl_opts_meta['cookiefile'] = COOKIES_FILE
+            with yt_dlp.YoutubeDL(ydl_opts_meta) as ydl:
                 info = ydl.extract_info(url, download=False)
                 
                 # 1. Try YouTube's official music metadata
