@@ -13,20 +13,24 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 DEFAULT_DOWNLOAD_DIR = os.path.join(BASE_DIR, 'downloads')
 COOKIES_FILE = os.path.join(ROOT_DIR, 'cookies.txt')
 
-# Dynamically write cookies.txt from environment variable if provided (e.g. on Hugging Face)
-cookies_env = os.environ.get("COOKIES_CONTENT")
-if cookies_env:
-    try:
-        with open(COOKIES_FILE, "w", encoding="utf-8") as f:
-            f.write(cookies_env.strip())
-    except Exception as e:
-        print(f"Failed to write COOKIES_CONTENT to file: {e}")
-
 # FFmpeg paths specific to this setup
 FFMPEG_DIR = r'C:\Users\giris\AppData\Local\ffmpegio\ffmpeg-downloader\ffmpeg\bin'
 
 import logging
 logger = logging.getLogger("audio_downloader.downloader")
+
+# Dynamically write cookies.txt from environment variable if provided (e.g. on Hugging Face)
+cookies_env = os.environ.get("COOKIES_CONTENT")
+if cookies_env:
+    logger.info("COOKIES_CONTENT environment variable detected. Attempting to write to cookies file...")
+    try:
+        with open(COOKIES_FILE, "w", encoding="utf-8") as f:
+            f.write(cookies_env.strip())
+        logger.info("Successfully wrote COOKIES_CONTENT to file at: %s", COOKIES_FILE)
+    except Exception as e:
+        logger.error("Failed to write COOKIES_CONTENT to file: %s", e)
+else:
+    logger.warning("No COOKIES_CONTENT environment variable detected in system env.")
 
 def apply_id3_tags(filepath: str, query: str):
     """Searches iTunes API for the song and embeds perfect ID3 tags."""
@@ -176,13 +180,19 @@ def download_with_ytdlp(query: str, output_dir: str, start_time: int = None, end
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            logger.debug("Calling extract_info on query...")
             info = ydl.extract_info(query, download=True)
             
+            if info is None:
+                logger.error("extract_info returned None. YouTube blocked the request or the query was invalid.")
+                raise ValueError("No video information retrieved. YouTube block or invalid link.")
+
             if 'entries' in info:
+                logger.debug("Unwrapping entries from playlist format response")
                 info = info['entries'][0]
             
             # If the video was skipped by our filter, no file was downloaded
-            if not info.get('requested_downloads') and not ydl.prepare_filename(info):
+            if not info or (not info.get('requested_downloads') and not ydl.prepare_filename(info)):
                  raise ValueError("Download skipped. Ensure the video is not a livestream.")
                  
             # Find the output path
@@ -251,6 +261,10 @@ def download_audio_to_mp3(url: str, output_dir: str = DEFAULT_DOWNLOAD_DIR, star
             with yt_dlp.YoutubeDL(ydl_opts_meta) as ydl:
                 info = ydl.extract_info(url, download=False)
                 
+                if info is None:
+                    logger.warning("Smart match extract_info returned None. Skipping lookup.")
+                    raise ValueError("No metadata retrieved during smart match lookup.")
+
                 # 1. Try YouTube's official music metadata
                 if info.get('track') and info.get('artist'):
                     clean_title = f"{info['artist']} {info['track']}"
