@@ -148,18 +148,19 @@ def download_with_ytdlp(query: str, output_dir: str, start_time: int = None, end
         'outtmpl': os.path.join(output_dir, '%(title)s.%(ext)s'),
         'quiet': False,
         'no_warnings': True,
-        # Spoof clients to bypass the "Sign in to confirm you're not a bot" challenge
-        'extractor_args': {
-            'youtube': {
-                'player_client': ['web', 'ios', 'android'],
-            }
-        }
     }
 
     # Use cookies if cookies.txt exists in the root directory
     if os.path.exists(COOKIES_FILE):
         logger.info("Using exported cookies from: %s", COOKIES_FILE)
         ydl_opts['cookiefile'] = COOKIES_FILE
+    else:
+        # If no cookies are provided, attempt to use client spoofing as a fallback
+        ydl_opts['extractor_args'] = {
+            'youtube': {
+                'player_client': ['web', 'ios', 'android'],
+            }
+        }
 
     # Cloud/Linux compatibility: Only use the hardcoded Windows path if it exists.
     # Otherwise, yt-dlp will automatically find ffmpeg in the system PATH.
@@ -236,14 +237,16 @@ def download_audio_to_mp3(url: str, output_dir: str = DEFAULT_DOWNLOAD_DIR, star
             ydl_opts_meta = {
                 'quiet': True,
                 'no_warnings': True,
-                'extractor_args': {
+            }
+            if os.path.exists(COOKIES_FILE):
+                ydl_opts_meta['cookiefile'] = COOKIES_FILE
+            else:
+                # If no cookies are provided, attempt to use client spoofing as a fallback
+                ydl_opts_meta['extractor_args'] = {
                     'youtube': {
                         'player_client': ['web', 'ios', 'android'],
                     }
                 }
-            }
-            if os.path.exists(COOKIES_FILE):
-                ydl_opts_meta['cookiefile'] = COOKIES_FILE
             with yt_dlp.YoutubeDL(ydl_opts_meta) as ydl:
                 info = ydl.extract_info(url, download=False)
                 
