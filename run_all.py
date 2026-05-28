@@ -11,9 +11,10 @@ port = os.environ.get("PORT", "8000")
 # Start FastAPI web app (always run this)
 print(f"Starting FastAPI web app on port {port}...")
 fastapi_proc = subprocess.Popen([
-    "uvicorn", "apps.universal_audio_downloader.app:app",
+    sys.executable, "-m", "uvicorn", "apps.backend.app:app",
     "--host", "0.0.0.0",
-    "--port", port
+    "--port", port,
+    "--reload"
 ])
 processes.append(fastapi_proc)
 
@@ -22,7 +23,7 @@ token = os.environ.get("TELEGRAM_BOT_TOKEN")
 if token:
     print("Starting Telegram Bot...")
     bot_proc = subprocess.Popen([
-        "python", "apps/universal_audio_downloader/bot.py"
+        sys.executable, "apps/backend/bot.py"
     ])
     processes.append(bot_proc)
 else:

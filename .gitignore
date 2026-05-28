@@ -19,3 +19,9 @@ Thumbs.db
 
 # Sensitive files
 .env
+
+# Download files
+apps/backend/downloads/*
+
+# Logs
+logs/*
